@@ -100,6 +100,10 @@ export class UsersService {
     return this.usersRepository.find({ where: { role: 'admin' } });
   }
 
+  async findByEmail(email: string): Promise<User | undefined> {
+    return this.usersRepository.findOne({ where: { email } });
+  }
+
   async updateClient(
     id: number,
     updateClientDto: UpdateClientDto,

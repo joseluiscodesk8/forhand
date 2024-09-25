@@ -1,21 +1,8 @@
-import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { UsersService } from './service/users/users.service';
-import { UsersController } from './controlles/users/users.controller';
-import { User } from './entity/user.entity';
-import { Client } from './entity/client.entity';
-import { Admin } from './entity/admin.entity';
-
-@Module({
-  imports: [TypeOrmModule.forFeature([User, Client, Admin])],
-  providers: [UsersService],
-  controllers: [UsersController],
-})
-export class UsersModule {}
-//////////////////////////////
 import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
+
 import { User } from 'src/users/entity/user.entity';
 import { Client } from 'src/users/entity/client.entity';
 import { Admin } from 'src/users/entity/admin.entity';
@@ -26,6 +13,8 @@ import { UpdateAdminDto } from 'src/users/dto/update.admin.dto';
 
 @Injectable()
 export class UsersService {
+  private readonly SALT_ROUNDS = 10;
+
   constructor(
     @InjectRepository(User) private usersRepository: Repository<User>,
     @InjectRepository(Client) private clientRepository: Repository<Client>,
@@ -37,16 +26,21 @@ export class UsersService {
   }
 
   async createClient(createClientDto: CreateClientDto): Promise<User> {
+    // Hasheamos la contraseña antes de guardar
+    const hashedPassword = await bcrypt.hash(
+      createClientDto.password,
+      this.SALT_ROUNDS,
+    );
+
     const user = this.usersRepository.create({
       ...createClientDto,
+      password: hashedPassword, 
       role: 'client',
     });
 
     try {
-      // Guardar el usuario en la base de datos
       const savedUser = await this.usersRepository.save(user);
 
-      // Crear y guardar el cliente vinculado al usuario
       const client = this.clientRepository.create({
         ...createClientDto,
         user: savedUser,
@@ -55,34 +49,41 @@ export class UsersService {
 
       return savedUser;
     } catch (error) {
-      if (error.code === '23505') { 
+      if (error.code === '23505') {
         throw new ConflictException('El email ya está registrado');
       }
-      throw error; 
+      throw error;
     }
   }
 
   async createAdmin(createAdminDto: CreateAdminDto): Promise<User> {
+    // Hasheamos la contraseña antes de guardar
+    const hashedPassword = await bcrypt.hash(
+      createAdminDto.password,
+      this.SALT_ROUNDS,
+    );
+
     const user = this.usersRepository.create({
       ...createAdminDto,
+      password: hashedPassword, 
       role: 'admin',
     });
-  
+
     try {
       const savedUser = await this.usersRepository.save(user);
-  
+
       const admin = this.adminRepository.create({
         ...createAdminDto,
         user: savedUser,
       });
       await this.adminRepository.save(admin);
-  
+
       return savedUser;
     } catch (error) {
-      if (error.code === '23505') { 
+      if (error.code === '23505') {
         throw new ConflictException('El email ya está registrado');
       }
-      throw error; 
+      throw error;
     }
   }
   
@@ -97,6 +98,10 @@ export class UsersService {
 
   async findAdmins(): Promise<User[]> {
     return this.usersRepository.find({ where: { role: 'admin' } });
+  }
+
+  async findByEmail(email: string): Promise<User | undefined> {
+    return this.usersRepository.findOne({ where: { email } });
   }
 
   async updateClient(
@@ -126,61 +131,37 @@ export class UsersService {
   }
 
 }
-/////////////
-import { Controller, Get, Post, Body, Param, Put } from '@nestjs/common';
-import { UsersService } from 'src/users/service/users/users.service';
-import { CreateClientDto } from 'src/users/dto/create.client.dto';
-import { CreateAdminDto } from 'src/users/dto/create.admin.dto';
-import { UpdateClientDto } from 'src/users/dto/update.client.dto';
-import { UpdateAdminDto } from 'src/users/dto/update.admin.dto';
+////////////////////
+import { Injectable } from '@nestjs/common';
+import { ClientLoginDto } from '../dto/client.login.dto';  // Importa el DTO de cliente
+import { AdminLoginDto } from '../dto/admin.login.dto';    // Importa el DTO de administrador
+import { UsersService } from '../../users/service/users.service';  // Asegúrate de la ruta correcta
+import { JwtService } from '@nestjs/jwt';
 
-@Controller('users')
-export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+@Injectable()
+export class AuthService {
+  constructor(
+    private readonly usersService: UsersService,
+    private readonly jwtService: JwtService,
+  ) {}
 
-  @Get()
-  getSkate(): string {
-    return this.usersService.getSkate();
+  async validateClient(loginDto: ClientLoginDto) {
+    const user = await this.usersService.findByEmail(loginDto.email);
+    if (user && user.password === loginDto.password) {
+      // Aquí puedes crear el token o devolver lo que necesites
+      return user; // Devuelve el usuario o cualquier dato que necesites
+    }
+    return null; // Devuelve null si no se encuentra el usuario o la contraseña es incorrecta
   }
 
-  @Get()
-  findAll() {
-    return this.usersService.findAll();
+  async validateAdmin(loginDto: AdminLoginDto) {
+    const user = await this.usersService.findByEmail(loginDto.email);
+    if (user && user.password === loginDto.password) {
+      return user; // O devuelve un token
+    }
+    return null; // Devuelve null si no se encuentra el usuario o la contraseña es incorrecta
   }
-
-  @Get('clients')
-  findClients() {
-    return this.usersService.findClients();
-  }
-
-  @Get('admins')
-  findAdmins() {
-    return this.usersService.findAdmins();
-  }
-
-  @Post('client')
-  async createClient(@Body() createClientDto: CreateClientDto) {
-    return this.usersService.createClient(createClientDto);
-  }
-
-  @Post('admin')
-  async createAdmin(@Body() createAdminDto: CreateAdminDto) {
-    return this.usersService.createAdmin(createAdminDto);
-  }
-
-  @Put('client/:id')
-  updateClient(
-    @Param('id') id: number,
-    @Body() updateClientDto: UpdateClientDto,
-  ) {
-    return this.usersService.updateClient(+id, updateClientDto);
-  }
-
-  @Put('admin/:id')
-  updateAdmin(@Param('id') id: number, @Body() updateAdminDto: UpdateAdminDto) {
-    return this.usersService.updateAdmin(+id, updateAdminDto);
-  }
-
 }
-//////////////////
-quiero usar bycryp para hashear la contraseña y usar una extratejia de passwrod local
+
+////////////////
+puedes agregar el swger aqui tambien

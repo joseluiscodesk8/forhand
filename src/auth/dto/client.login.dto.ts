@@ -1,12 +1,7 @@
 import { IsString, IsNotEmpty } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class CreateClientDto {
-  @ApiProperty({ description: 'Nombre del cliente' })
-  @IsString()
-  @IsNotEmpty()
-  name: string;
-
+export class ClientLoginDto {
   @ApiProperty({ description: 'Correo electrónico del cliente' })
   @IsString()
   @IsNotEmpty()
@@ -17,7 +12,8 @@ export class CreateClientDto {
   @IsNotEmpty()
   password: string;
 
-  @ApiProperty({ description: 'Campo específico del cliente' })
+  @ApiProperty({ description: 'Nombre del cliente' })
+  @IsString()
   @IsNotEmpty()
-  someClientSpecificField: string;
+  name: string;
 }

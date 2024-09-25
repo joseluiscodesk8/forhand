@@ -5,6 +5,8 @@ import { UsersModule } from './users/users.module';
 import { User } from './users/entity/user.entity';
 import { Client } from './users/entity/client.entity';
 import { Admin } from './users/entity/admin.entity';
+import { AuthModule } from './auth/auth.module';
+
 
 @Module({
   imports: [
@@ -28,8 +30,7 @@ import { Admin } from './users/entity/admin.entity';
       }),
     }),
     UsersModule,
+    AuthModule,
   ],
-  controllers: [],
-  providers: [],
 })
 export class AppModule {}

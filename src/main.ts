@@ -1,3 +1,4 @@
+import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { config } from 'dotenv';
@@ -14,8 +15,10 @@ async function bootstrap() {
     allowedHeaders: 'Content-Type, Authorization',
   });
 
+  app.useGlobalPipes(new ValidationPipe());
+
   const config = new DocumentBuilder()
-    .setTitle('API de Productos')
+    .setTitle('API forhand')
     .setDescription('Documentación de la API para el módulo de productos')
     .setVersion('1.0')
     .addBearerAuth() // Si tienes autenticación con JWT

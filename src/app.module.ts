@@ -6,6 +6,8 @@ import { User } from './users/entity/user.entity';
 import { Client } from './users/entity/client.entity';
 import { Admin } from './users/entity/admin.entity';
 import { AuthModule } from './auth/auth.module';
+import { ProductModule } from './product/product.module';
+import { Product } from './product/entities/product.entity';
 
 
 @Module({
@@ -25,12 +27,13 @@ import { AuthModule } from './auth/auth.module';
         username: configService.get<string>('DATABASE_USERNAME'),
         password: configService.get<string>('DATABASE_PASSWORD'),
         database: configService.get<string>('DATABASE_NAME'),
-        entities: [User, Client, Admin], // Incluir todas las entidades
+        entities: [User, Client, Admin, Product], // Incluir todas las entidades
         synchronize: true, // Solo para desarrollo; no usar en producción
       }),
     }),
     UsersModule,
     AuthModule,
+    ProductModule,
   ],
 })
 export class AppModule {}

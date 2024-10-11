@@ -9,7 +9,6 @@ import { AuthModule } from './auth/auth.module';
 import { ProductModule } from './product/product.module';
 import { Product } from './product/entities/product.entity';
 
-
 @Module({
   imports: [
     // ConfigModule para manejar variables de entorno

@@ -1,6 +1,10 @@
 {
   "compilerOptions": {
     "module": "commonjs",
+    "typeRoots": [
+      "./node_modules/@types",
+      "./@types" // Asegúrate de que esta ruta esté incluida
+    ],
     "declaration": true,
     "removeComments": true,
     "emitDecoratorMetadata": true,

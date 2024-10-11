@@ -32,4 +32,5 @@ export class User {
   @OneToOne(() => Admin, (admin) => admin.user)
   @JoinColumn()
   admin?: Admin;
+  carts: any;
 }
